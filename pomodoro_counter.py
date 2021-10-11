@@ -19,20 +19,20 @@ INDICATOR = AppIndicator3.Indicator.new(
 )
 
 POM_FILE = '2021_pomodoros.csv'
-poms_for_the_year = []
+poms_for_the_year: list
 
 def main():
+    global poms_for_the_year
     with open(POM_FILE, newline='') as csvfile:
         reader = csv.reader(csvfile)
 
-        for row in reader:
-            date = row[0]
-            assert datetime_valid(date), "Row x column 0 is not a date. Instead it is x."
-            poms = row[1]
-            poms_for_the_year.append({
-                'date': date,
-                'poms': poms,
-            })
+        def dictify_csv(row_list):
+            # This will throw_list an error if it's not a date, and thus serves as a validation
+            date.fromisoformat(row_list[0])
+            assert (row_list[1] == "") or (0 <= int(row_list[1]))
+            return {'date': row_list[0], 'poms': row_list[1]}
+
+        poms_for_the_year = [dictify_csv(row) for row in reader]
 
     INDICATOR.set_status(AppIndicator3.IndicatorStatus.ACTIVE)
     update_poms_label()
@@ -46,51 +46,66 @@ def build_menu():
     item_increment.connect('activate', increment_poms)
     menu.append(item_increment)
 
+    item_decrement = Gtk.MenuItem(label='Subtract one')
+    item_decrement.connect('activate', decrement_poms)
+    menu.append(item_decrement)
+
+    item_sync = Gtk.MenuItem(label='Sync')
+    item_sync.connect('activate', sync)
+    menu.append(item_sync)
+
     item_quit = Gtk.MenuItem(label='Quit')
-    item_quit.connect('activate', quit)
+    item_quit.connect('activate', Gtk.main_quit)
     menu.append(item_quit)
 
     menu.show_all()
     return menu
 
 def increment_poms(_):
-    global poms_for_the_year
-    if poms_for_today()['poms'] is "":
-        poms_for_today()['poms'] = "0"
+    if poms_for_today()['poms'] == "":
+        poms_for_today()['poms'] = "1"
     else:
         poms_for_today()['poms'] = str(int(poms_for_today()['poms']) + 1)
 
+    sync()
+
+def decrement_poms(_):
+    if poms_for_today()['poms'] == "":
+        poms_for_today()['poms'] = "0"
+    elif poms_for_today()['poms'] == "0":
+        return  # Can't be less than zero
+    else:
+        poms_for_today()['poms'] = str(int(poms_for_today()['poms']) - 1)
+
+    sync()
+
+def sync(*_):
+    update_csv()
+    update_poms_label()
+
+def update_csv():
     with open(POM_FILE, 'w', newline='') as csvfile:
-        # import pdb;pdb.set_trace()
         writer = csv.writer(csvfile)
         for pom_dict in poms_for_the_year:
             writer.writerow([pom_dict['date'], pom_dict['poms']])
 
-    update_poms_label()
+def update_poms_label():
+    if poms_for_today()['poms'] == "":
+        poms_for_today()['poms'] = "0"
 
-def quit(_):
-    Gtk.main_quit()
-
-def datetime_valid(string):
-    try:
-        date.fromisoformat(string)
-    except ValueError:
-        return False
-    return True
+    INDICATOR.set_label(
+        " " + poms_for_today()['poms'],
+        APP_INDICATOR_ID,
+    )
 
 def year_index_of_day():
     return date.today().timetuple().tm_yday - 1
 
 def poms_for_today():
     poms = poms_for_the_year[year_index_of_day()]
-    assert date.fromisoformat(poms['date']) == date.today(), "Date value from spreadsheet x does not match today's date."
+    err_str = f'Date value from spreadsheet "{poms["date"]}" does not match today\'s date ({date.today()}).'
+    assert date.fromisoformat(poms['date']) == date.today(), err_str
     return poms
-
-def update_poms_label():
-    INDICATOR.set_label(
-        poms_for_today()['poms'] + " poms",
-        APP_INDICATOR_ID,
-    )
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)
