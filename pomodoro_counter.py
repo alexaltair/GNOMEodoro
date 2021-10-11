@@ -1,7 +1,7 @@
 # This needs an apt install gir1.2-appindicator3-0.1
 
 import csv
-from datetime import date
+from datetime import date, datetime
 import os
 import signal
 
@@ -20,6 +20,7 @@ INDICATOR = AppIndicator3.Indicator.new(
 
 POM_FILE = '2021_pomodoros.csv'
 poms_for_the_year: list
+item_timestamp = None
 
 def main():
     global poms_for_the_year
@@ -40,6 +41,7 @@ def main():
     Gtk.main()
 
 def build_menu():
+    global item_timestamp
     menu = Gtk.Menu()
 
     item_increment = Gtk.MenuItem(label='Add one')
@@ -54,6 +56,10 @@ def build_menu():
     item_sync.connect('activate', sync)
     menu.append(item_sync)
 
+    item_timestamp = Gtk.MenuItem(label="No poms recorded yet")
+    item_timestamp.set_sensitive(False)
+    menu.append(item_timestamp)
+
     item_quit = Gtk.MenuItem(label='Quit')
     item_quit.connect('activate', Gtk.main_quit)
     menu.append(item_quit)
@@ -61,12 +67,16 @@ def build_menu():
     menu.show_all()
     return menu
 
+def update_timestamp():
+    item_timestamp.set_label("Last pom: " + datetime.now().strftime("%Y-%m-%d %H:%M"))
+
 def increment_poms(_):
     if poms_for_today()['poms'] == "":
         poms_for_today()['poms'] = "1"
     else:
         poms_for_today()['poms'] = str(int(poms_for_today()['poms']) + 1)
 
+    update_timestamp()
     sync()
 
 def decrement_poms(_):
