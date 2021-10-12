@@ -20,7 +20,7 @@ INDICATOR = AppIndicator3.Indicator.new(
 
 POM_FILE = '2021_pomodoros.csv'
 poms_for_the_year: list
-item_timestamp = None
+stats_items = {}
 
 def main():
     global poms_for_the_year
@@ -41,7 +41,6 @@ def main():
     Gtk.main()
 
 def build_menu():
-    global item_timestamp
     menu = Gtk.Menu()
 
     item_increment = Gtk.MenuItem(label='Add one')
@@ -56,9 +55,24 @@ def build_menu():
     item_sync.connect('activate', sync)
     menu.append(item_sync)
 
+
     item_timestamp = Gtk.MenuItem(label="No poms recorded yet")
     item_timestamp.set_sensitive(False)
+    stats_items["timestamp"] = item_timestamp
     menu.append(item_timestamp)
+
+    item_week_average = Gtk.MenuItem()
+    item_week_average.set_sensitive(False)
+    stats_items["week_average"] = item_week_average
+    update_week_average()
+    menu.append(item_week_average)
+
+    item_year_average = Gtk.MenuItem()
+    item_year_average.set_sensitive(False)
+    stats_items["year_average"] = item_year_average
+    update_year_average()
+    menu.append(item_year_average)
+
 
     item_quit = Gtk.MenuItem(label='Quit')
     item_quit.connect('activate', Gtk.main_quit)
@@ -68,7 +82,7 @@ def build_menu():
     return menu
 
 def update_timestamp():
-    item_timestamp.set_label("Last pom: " + datetime.now().strftime("%Y-%m-%d %H:%M"))
+    stats_items["timestamp"].set_label("Last pom: " + datetime.now().strftime("%Y-%m-%d %H:%M"))
 
 def increment_poms(_):
     if poms_for_today()['poms'] == "":
@@ -92,12 +106,14 @@ def decrement_poms(_):
 def sync(*_):
     update_csv()
     update_poms_label()
+    update_week_average()
+    update_year_average()
 
 def update_csv():
     with open(POM_FILE, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
-        for pom_dict in poms_for_the_year:
-            writer.writerow([pom_dict['date'], pom_dict['poms']])
+        for day in poms_for_the_year:
+            writer.writerow([day['date'], day['poms']])
 
 def update_poms_label():
     if poms_for_today()['poms'] == "":
@@ -107,6 +123,20 @@ def update_poms_label():
         " " + poms_for_today()['poms'],
         APP_INDICATOR_ID,
     )
+
+def update_week_average():
+    stats_items["week_average"].set_label("7-day avg: " + "{:.5f}".format(week_average()))
+
+def update_year_average():
+    stats_items["year_average"].set_label("2021 avg: " + "{:.5f}".format(year_average()))
+
+def week_average():
+    last_week = poms_for_the_year[year_index_of_day()-6:year_index_of_day()+1]
+    return sum(map((lambda day: int(day['poms'])), last_week))/7
+
+def year_average():
+    days_with_poms = list(filter((lambda day: day['poms'] != ""), poms_for_the_year))
+    return sum(map((lambda day: int(day['poms'])), days_with_poms))/len(days_with_poms)
 
 def year_index_of_day():
     return date.today().timetuple().tm_yday - 1
