@@ -1,8 +1,10 @@
-# This needs an apt install gir1.2-appindicator3-0.1
+#!/usr/bin/env python3
 
+# This needs an apt install gir1.2-appindicator3-0.1
 import csv
 from datetime import date, datetime
 import os
+import pathlib
 import signal
 
 import gi
@@ -12,13 +14,14 @@ from gi.repository import Gtk
 from gi.repository import AppIndicator3
 
 APP_INDICATOR_ID = 'pomodoro_counter'
+DIR_PATH = str(pathlib.Path(__file__).parent.resolve())
 INDICATOR = AppIndicator3.Indicator.new(
     APP_INDICATOR_ID,
-    os.path.abspath('timer.svg'),
+    os.path.join(DIR_PATH, 'timer.svg'),
     AppIndicator3.IndicatorCategory.SYSTEM_SERVICES,
 )
 
-POM_FILE = '2021_pomodoros.csv'
+POM_FILE = os.path.join(DIR_PATH, '2021_pomodoros.csv')
 poms_for_the_year: list
 stats_items = {}
 
@@ -33,7 +36,7 @@ def main():
             assert (row_list[1] == "") or (0 <= int(row_list[1]))
             return {'date': row_list[0], 'poms': row_list[1]}
 
-        poms_for_the_year = [dictify_csv(row) for row in reader]
+        poms_for_the_year = list(map(dictify_csv, reader))
 
     INDICATOR.set_status(AppIndicator3.IndicatorStatus.ACTIVE)
     update_poms_label()
