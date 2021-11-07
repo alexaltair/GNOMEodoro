@@ -46,11 +46,11 @@ def main():
 def build_menu():
     menu = Gtk.Menu()
 
-    item_increment = Gtk.MenuItem(label='Add one')
+    item_increment = Gtk.MenuItem(label='+1')
     item_increment.connect('activate', increment_poms)
     menu.append(item_increment)
 
-    item_decrement = Gtk.MenuItem(label='Subtract one')
+    item_decrement = Gtk.MenuItem(label='-1')
     item_decrement.connect('activate', decrement_poms)
     menu.append(item_decrement)
 
@@ -128,10 +128,10 @@ def update_poms_label():
     )
 
 def update_week_average():
-    stats_items["week_average"].set_label("7-day avg: " + "{:.5f}".format(week_average()))
+    stats_items["week_average"].set_label("7-day avg: " + "{:.3f}".format(week_average()))
 
 def update_year_average():
-    stats_items["year_average"].set_label("2021 avg: " + "{:.5f}".format(year_average()))
+    stats_items["year_average"].set_label("2021 avg: " + "{:.4f}".format(year_average()))
 
 def week_average():
     last_week = poms_for_the_year[year_index_of_day()-6:year_index_of_day()+1]
