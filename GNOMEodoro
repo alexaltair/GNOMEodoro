@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 while true
 do
-    pkill -f "python3 /home/altair/Dropbox/code/GNOMEodoro/pomodoro_counter.py";
-    /home/altair/Dropbox/code/GNOMEodoro/pomodoro_counter.py;
-    sleep $(($(date -d 'tomorrow 02:00:00' +%s) - $(date +%s))); 
+    pkill -f "python3 /home/altair/Dropbox/code/GNOMEodoro/pomodoro_counter.py"
+    /home/altair/Dropbox/code/GNOMEodoro/pomodoro_counter.py &
+    sleep $(($(date -d '2am tomorrow' +%s) - $(date +%s)))
 done

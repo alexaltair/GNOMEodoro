@@ -85,7 +85,7 @@ def build_menu():
     return menu
 
 def update_timestamp():
-    stats_items["timestamp"].set_label("Last pom: " + datetime.now().strftime("%Y-%m-%d %H:%M"))
+    stats_items["timestamp"].set_label("Last pom: " + datetime.now().strftime("%b %d %H:%M"))
 
 def increment_poms(_):
     if poms_for_today()['poms'] == "":
